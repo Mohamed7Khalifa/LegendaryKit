@@ -1,0 +1,19 @@
+# This for update all packages
+- name: Update all packages
+  yum:
+    name: '*'
+    state: latest
+    update_only: yes
+
+# Install specific packages 
+- name: Ensure a list of yum packages are installed
+  yum: # this can be change depend on package manager that is used (apt,pip,etc..) 
+    name: "{{ packages }}"
+    state: latest
+  update_cache: yes
+  vars:
+    packages:
+    - package example 1
+    - package example 2
+    - package example 3
+    - package example 4

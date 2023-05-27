@@ -1,0 +1,51 @@
+
+# This ansible playbook that is used to configure kubectl 
+
+- name: Create AWS credentials file
+  file:
+    path: ".aws/credentials"
+    state: touch
+
+- name: Add AWS credentials to ~/.aws/credentials
+  lineinfile:
+    path: .aws/credentials
+    line: |
+      [default]
+      aws_access_key_id = {{ aws_access_key }} 
+      aws_secret_access_key = {{ aws_secret_key }}
+# Search for kubectl vars in your machine 
+  vars:
+    aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+
+
+- name: Download and set execute permissions for kubectl
+  get_url:
+    url: https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.10/2023-01-30/bin/linux/amd64/kubectl
+    dest: /tmp/kubectl
+    mode: 'u+x'
+  register: kubectl_download
+
+- name: Create kubectl bin directory
+  file:
+    path: "{{ ansible_env.HOME }}/bin"
+    state: directory
+
+- name: Copy kubectl to bin directory
+  copy:
+    src: /tmp/kubectl
+    dest: "{{ ansible_env.HOME }}/bin/kubectl"
+    mode: 'u+x'
+    remote_src: yes
+
+- name: Add kubectl bin directory to PATH
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: 'export PATH=$PATH:{{ ansible_env.HOME }}/bin'
+    state: present
+    create: true
+  when: kubectl_download.changed
+
+# here u should complete ur own data about that ur cluster
+- name: connect kubectl to aws cluster
+  shell: aws eks --region  update-kubeconfig --name 
